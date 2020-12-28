@@ -41,9 +41,49 @@ sf = data %>% filter(home_team == 'SF' | away_team == 'SF')
 
 Once we have the data for SF 49ers, we can visualize penalties received by both the offense and defense via horizontal bar plot.
 
+First, let us visualize the penalties for all the violations.
+
+```{r penalty, echo=TRUE, warning = FALSE, fig.height = 5, fig.width = 13}
+
+penalties = sf %>% select(penalty_type,penalty_yards) %>% group_by(penalty_type) %>% filter(row_number() == n())%>% drop_na() %>% ungroup()
+
+initial_plot <- penalties %>%
+  # reorder penalty type by penalty yards
+  mutate(penalty_type = fct_reorder(penalty_type, penalty_yards)) %>%
+  # make a bar plot of penalty yards by penalty type
+  ggplot(aes(x = penalty_type,y=penalty_yards)) + 
+  geom_col()
+
+titled_plot <- initial_plot + 
+  # Add the title, subtitle, and caption
+  labs(title = "How Severe is a Game Rule Violation?",
+       subtitle = "In-Game Yard Penalties Received by the 49ers",
+       #caption = "Source: nflfastR", 
+       # Remove the x- and y-axis labels
+       x = "", 
+       y = "") 
+
+flipped_plot <- titled_plot + 
+  # Flip the axes
+  coord_flip() + 
+  # Remove the x-axis ticks and labels
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+
+
+#flipped_plot
+flipped_plot + geom_text(aes(label = penalty_yards, 
+                             y = penalty_yards + .03), 
+                         position = position_dodge(0.9),
+                         hjust = -.8,
+                         vjust = .7)+ theme_fivethirtyeight()
+
+
+```
+
 For offense, the Niners were mostly caught for offensive holding and false start.
 
-```{r offense, echo=TRUE, warning = FALSE, fig.height = 5, fig.width = 13}
+```{r offense, echo=TRUE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 13}
 # visualize penalty counts
 
 # Better way to pick up SF penalties on offense
