@@ -1,0 +1,123 @@
+---
+title: "NFL Football Penalty Visualization"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+The goal of this quick project is to visualize the penalties given to the San Francisco 49ers during the 2020 season. In NFL, each penalty pushes a team back from scoring opportunities. We will look at penalties received by Niners'offense and defense team.
+
+
+First we load the necessary libraries for plotting.
+```{r libraries, warning=FALSE, message=FALSE}
+# load library
+library(nflfastR)
+library(tidyverse)
+library(ggthemes)
+library(forcats)
+
+# Suppress summarize info
+options(dplyr.summarise.inform = FALSE)
+
+# To prevent R from printing numbers in scientif notation
+options(scipen = 9999)
+```
+
+Second, we obtain data via *nflfastR* package. We will read the season data (R data) scraped by the authors of the package. 
+
+
+```{r echo = TRUE, warning = FALSE, message=FALSE}
+# Read data (2020 NFL season)
+data <- readRDS(url('https://raw.githubusercontent.com/guga31bb/nflfastR-data/master/data/play_by_play_2020.rds'))
+
+# Find San Francisco games only
+sf = data %>% filter(home_team == 'SF' | away_team == 'SF')
+```
+
+
+
+Once we have the data for SF 49ers, we can visualize penalties received by both the offense and defense via horizontal bar plot.
+
+For offense, the Niners were mostly caught for offensive holding and false start.
+
+```{r offense, echo=TRUE, warning = FALSE, fig.height = 5, fig.width = 13}
+# visualize penalty counts
+
+# Better way to pick up SF penalties on offense
+foul = sf %>% filter(posteam == 'SF',penalty_team == 'SF')
+foul = foul %>% select(penalty_type) %>% group_by(penalty_type) %>% summarize(count=n()) %>% drop_na() %>% ungroup()
+
+initial_plot <- foul %>%
+  # reorder penalty type by count
+  mutate(penalty_type = fct_reorder(penalty_type, count)) %>%
+  # make a bar plot of count by penalty type
+  ggplot(aes(x = penalty_type,y=count)) + 
+  geom_col()
+
+titled_plot <- initial_plot + 
+  # Add the title, subtitle, and caption
+  labs(title = "Offense Penalties",
+       subtitle = "San Francisco 49ers Season 2020",
+       caption = "Source: nflfastR", 
+       # Remove the x- and y-axis labels
+       x = "", 
+       y = "") 
+
+flipped_plot <- titled_plot + 
+  # Flip the axes
+  coord_flip() + 
+  # Remove the x-axis ticks and labels
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+
+
+#flipped_plot
+flipped_plot + geom_text(aes(label = count, 
+                             y = count + .03), 
+                         position = position_dodge(0.9),
+                         hjust = -.8,
+                         vjust = 1)+ theme_fivethirtyeight()
+```
+
+For defense, the Niners were top for defensive holding and defensive pass interference.
+
+```{r defense, echo=TRUE, warning = FALSE, message=FALSE, fig.height = 5, fig.width = 13}
+# Better way to pick up SF penalties on defense
+def_foul = sf %>% filter(defteam == 'SF',penalty_team == 'SF')
+def_foul = def_foul %>% select(penalty_type,penalty) %>% group_by(penalty_type) %>% summarize(count=n()) %>% drop_na() %>% ungroup()
+
+initial_plot <- def_foul %>%
+  # reorder penalty type by count
+  mutate(penalty_type = fct_reorder(penalty_type, count)) %>%
+  # make a bar plot of count by penalty type
+  ggplot(aes(x = penalty_type,y=count)) + 
+  geom_col()
+
+titled_plot <- initial_plot + 
+  # Add the title, subtitle, and caption
+  labs(title = "Defense Penalties",
+       subtitle = "San Francisco 49ers Season 2020",
+       caption = "Source: nflfastR", 
+       # Remove the x- and y-axis labels
+       x = "", 
+       y = "") 
+
+flipped_plot <- titled_plot + 
+  # Flip the axes
+  coord_flip() + 
+  # Remove the x-axis ticks and labels
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+#flipped_plot
+
+
+flipped_plot + geom_text(aes(label = count, 
+                             y = count + .03), 
+                         position = position_dodge(0.9),
+                         hjust = -1,
+                         vjust = 1)+ theme_fivethirtyeight()
+
+```
